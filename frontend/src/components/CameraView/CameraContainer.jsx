@@ -58,16 +58,6 @@ const CameraContainer = () => {
           </div>
         </div>
       </div>
-      
-      <div className="camera-controls">
-        <button className="action-button record">
-          <span className="record-icon"></span>
-          Start Recording
-        </button>
-        <button className="action-button">
-          Calibrate Cameras
-        </button>
-      </div>
     </div>
   );
 };

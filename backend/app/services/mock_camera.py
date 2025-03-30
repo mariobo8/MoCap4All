@@ -119,14 +119,6 @@ class MockCameraService:
         # Convert to color for better visualization
         image_color = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
         
-        # Add camera position and orientation info
-        camera_info = f"Camera: ({camera_x:.1f}, {camera_y:.1f}, {camera_z:.1f}) | Yaw: {camera_yaw:.1f} | Pitch: {camera_pitch:.1f}"
-        cv2.putText(image_color, camera_info, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-        
-        # Add pattern position info
-        pattern_info = f"Pattern: ({self.pattern_x:.1f}, {self.pattern_y:.1f}, {self.pattern_z:.1f})"
-        cv2.putText(image_color, pattern_info, (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-        
         return image_color
     
     def encode_frame(self, frame):
