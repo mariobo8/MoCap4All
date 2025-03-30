@@ -12,7 +12,7 @@ logging.basicConfig(
 # Import routers
 from app.routers import camera
 
-app = FastAPI(title="MoCap4Robotics API")
+app = FastAPI(title="MoCap4All API")
 
 # Configure CORS
 origins = [
@@ -33,7 +33,7 @@ app.include_router(camera.router, tags=["Camera"])
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to MoCap4Robotics API"}
+    return {"message": "Welcome to MoCap4All API"}
 
 @app.get("/health")
 async def health_check():

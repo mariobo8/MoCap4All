@@ -35,7 +35,7 @@ function App() {
       default:
         return (
           <div className="welcome-container">
-            <h2>Welcome to MoCap4Robotics</h2>
+            <h2>Welcome to MoCap4All</h2>
             <p>A motion capture system designed specifically for robotics applications.</p>
             <div className="feature-list">
               <div className="feature-item">
@@ -65,7 +65,7 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>MoCap4Robotics</h1>
+        <h1>MoCap4All</h1>
         <p>Motion Capture System for Robotics</p>
       </header>
       

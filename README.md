@@ -1,11 +1,11 @@
-# MoCap4Robotics
+# MoCap4All
 
 A motion capture system built with Python FastAPI backend and React frontend using Vite.
 
 ## Project Structure
 
 ```
-MoCap4Robotics/
+MoCap4All/
 ├── backend/
 │   ├── app/
 │   │   ├── routers/
