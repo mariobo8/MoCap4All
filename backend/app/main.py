@@ -1,6 +1,16 @@
 # app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+)
+
+# Import routers
+from app.routers import camera
 
 app = FastAPI(title="MoCap4Robotics API")
 
@@ -17,6 +27,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(camera.router, tags=["Camera"])
 
 @app.get("/")
 async def root():

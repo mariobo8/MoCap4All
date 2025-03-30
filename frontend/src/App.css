@@ -1,6 +1,9 @@
+/* src/App.css */
 .app-container {
   min-height: 100vh;
   background-color: #f5f5f5;
+  display: flex;
+  flex-direction: column;
 }
 
 .app-header {
@@ -21,22 +24,134 @@
   margin: 0.5rem 0 0 0;
 }
 
+.app-content {
+  display: flex;
+  flex: 1;
+}
+
+.app-nav {
+  width: 220px;
+  background-color: #fff;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  padding: 1rem 0;
+}
+
+.app-nav ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.app-nav li {
+  margin-bottom: 0.5rem;
+}
+
+.app-nav a {
+  display: block;
+  padding: 0.75rem 1.5rem;
+  color: #333;
+  text-decoration: none;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+
+.app-nav a:hover {
+  background-color: #f0f7ff;
+  color: #1976d2;
+}
+
+.app-nav a.active {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border-left-color: #1976d2;
+  font-weight: 500;
+}
+
 .app-main {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-.app-card {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex: 1;
   padding: 1.5rem;
-  margin-top: 1rem;
+  overflow-y: auto;
 }
 
-.app-card h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
+.welcome-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  text-align: center;
+  max-width: 800px;
+  margin: 1rem auto;
+}
+
+.welcome-container h2 {
+  margin-top: 0;
+  color: #333;
+  font-size: 1.75rem;
+}
+
+.feature-list {
+  display: flex;
+  justify-content: space-between;
+  margin: 2rem 0;
+  flex-wrap: wrap;
+}
+
+.feature-item {
+  flex-basis: 30%;
+  background-color: #f9f9f9;
+  padding: 1.5rem;
+  border-radius: 8px;
   margin-bottom: 1rem;
+}
+
+.feature-item h3 {
+  color: #1976d2;
+  margin-top: 0;
+}
+
+.start-button {
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.start-button:hover {
+  background-color: #1565c0;
+}
+
+.placeholder-view {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.placeholder-view h2 {
+  margin-top: 0;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+}
+
+/* For smaller screens */
+@media (max-width: 768px) {
+  .app-content {
+    flex-direction: column;
+  }
+  
+  .app-nav {
+    width: 100%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .feature-item {
+    flex-basis: 100%;
+  }
 }
