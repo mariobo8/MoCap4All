@@ -135,6 +135,7 @@ const CameraView = ({ cameraId, title, markerDetectionEnabled }) => {
         
         <canvas 
           ref={canvasRef} 
+          id={`camera-canvas-${cameraId}`}
           width="640" 
           height="480"
           className="camera-canvas"

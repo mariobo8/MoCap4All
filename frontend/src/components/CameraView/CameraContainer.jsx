@@ -5,6 +5,7 @@ import './CameraContainer.css';
 
 const CameraContainer = () => {
   const [markerDetectionEnabled, setMarkerDetectionEnabled] = useState(false);
+  const [isCalibrating, setIsCalibrating] = useState(false);
 
   // Function to send pattern movement commands via API
   const movePattern = (direction) => {
@@ -28,6 +29,59 @@ const CameraContainer = () => {
         setMarkerDetectionEnabled(data.enabled);
       })
       .catch(err => console.error('Error toggling marker detection:', err));
+  };
+
+  // Function to perform camera calibration
+  const calibrateCameras = async () => {
+    setIsCalibrating(true);
+    console.log('Starting camera calibration...');
+    
+    // Get frames from each camera
+    try {
+      // Get frames from both cameras
+      const getFrame = async (cameraId) => {
+        // Try to find the corresponding canvas element
+        const canvas = document.querySelector(`#camera-canvas-${cameraId}`);
+        if (!canvas) {
+          throw new Error(`Cannot find canvas for camera ${cameraId}`);
+        }
+        
+        // Get the data URL from the canvas and convert it to base64
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        return dataUrl.split(',')[1]; // Remove the data:image/jpeg;base64, prefix
+      };
+      
+      // Get frames from both cameras
+      const frame1Promise = getFrame('1');
+      const frame2Promise = getFrame('2');
+      
+      const [frame1, frame2] = await Promise.all([frame1Promise, frame2Promise]);
+      
+      // Send frames to the backend for calibration
+      const response = await fetch('http://localhost:8000/api/camera-calibration/calibrate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          frames: [frame1, frame2]
+        }),
+      });
+      
+      const data = await response.json();
+      console.log('Calibration result:', data);
+      
+      if (data.success) {
+        alert('Camera calibration successful!');
+      } else {
+        alert(`Camera calibration failed: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error during calibration:', error);
+      alert(`Calibration error: ${error.message}`);
+    } finally {
+      setIsCalibrating(false);
+    }
   };
 
   return (
@@ -89,6 +143,14 @@ const CameraContainer = () => {
           onClick={toggleMarkerDetection}
         >
           {markerDetectionEnabled ? 'Disable Marker Detection' : 'Enable Marker Detection'}
+        </button>
+        
+        <button 
+          className={`action-button calibrate ${isCalibrating ? 'active' : ''}`} 
+          onClick={calibrateCameras}
+          disabled={isCalibrating}
+        >
+          {isCalibrating ? 'Calibrating...' : 'Calibrate Cameras'}
         </button>
       </div>
     </div>

@@ -10,7 +10,7 @@ logging.basicConfig(
 )
 
 # Import routers
-from app.routers import camera, marker_detection
+from app.routers import camera, marker_detection, camera_calibration
 from app.routers.camera import websocket_endpoint
 
 app = FastAPI(title="MoCap4All API")
@@ -38,6 +38,7 @@ async def camera_websocket(websocket: WebSocket, camera_id: str):
 # HTTP API routes
 app.include_router(camera.router, prefix="/api", tags=["Camera"])
 app.include_router(marker_detection.router, prefix="/api", tags=["Marker Detection"])
+app.include_router(camera_calibration.router, prefix="/api", tags=["Camera Calibration"])
 
 @app.get("/")
 async def root():
