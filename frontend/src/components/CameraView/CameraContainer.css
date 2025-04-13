@@ -103,6 +103,12 @@
   margin-top: 20px;
 }
 
+.marker-detection-controls {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
 .action-button {
   background-color: #2196F3;
   color: white;
@@ -118,6 +124,14 @@
 
 .action-button:hover {
   background-color: #1976D2;
+}
+
+.action-button.active {
+  background-color: #4CAF50;
+}
+
+.action-button.active:hover {
+  background-color: #388E3C;
 }
 
 .action-button.record {

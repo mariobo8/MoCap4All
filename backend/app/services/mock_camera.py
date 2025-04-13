@@ -1,12 +1,16 @@
 # app/services/mock_camera.py
 import numpy as np
-import cv2
+import cv2 as cv
 import math
 import base64
 import threading
 import time
 import asyncio
 import logging
+from typing import Dict, Callable, Any, Optional
+
+# Import the marker detector
+from app.services.marker_detection import get_marker_detector
 
 class MockCameraService:
     def __init__(self):
@@ -41,6 +45,12 @@ class MockCameraService:
         
         # Lock for thread safety
         self.lock = threading.Lock()
+        
+        # Marker detection flag
+        self.enable_marker_detection = False
+        
+        # Get marker detector
+        self.marker_detector = get_marker_detector()
         
         logging.info("Mock camera service initialized")
     
@@ -114,16 +124,16 @@ class MockCameraService:
                 if 0 <= u < self.width and 0 <= v < self.height:
                     # Size based on distance
                     size = max(2, int(8 * self.focal_length / z_rot_final))
-                    cv2.circle(image, (u, v), size, 255, -1)
+                    cv.circle(image, (u, v), size, 255, -1)
         
         # Convert to color for better visualization
-        image_color = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        image_color = cv.cvtColor(image, cv.COLOR_GRAY2BGR)
         
         return image_color
     
     def encode_frame(self, frame):
         """Encode frame to base64 for WebSocket transmission."""
-        _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+        _, buffer = cv.imencode('.jpg', frame, [cv.IMWRITE_JPEG_QUALITY, 80])
         jpg_as_text = base64.b64encode(buffer).decode('utf-8')
         return jpg_as_text
     
@@ -155,6 +165,20 @@ class MockCameraService:
                 self.pattern_z -= amount
         logging.info(f"Pattern moved {direction} by {amount} units")
     
+    def toggle_marker_detection(self, enable: bool) -> bool:
+        """
+        Toggle marker detection on/off.
+        
+        Args:
+            enable: True to enable marker detection, False to disable
+            
+        Returns:
+            Current state of marker detection
+        """
+        self.enable_marker_detection = enable
+        logging.info(f"Marker detection {'enabled' if enable else 'disabled'}")
+        return self.enable_marker_detection
+    
     async def capture_loop(self):
         """Main capture loop that generates frames."""
         self.running = True
@@ -174,8 +198,14 @@ class MockCameraService:
                             view['yaw'], view['pitch']
                         )
                     
-                    # Encode and send via callback
+                    # Process frame for marker detection if enabled
                     encoded_frame = self.encode_frame(frame)
+                    
+                    if self.enable_marker_detection:
+                        # Process frame with marker detector
+                        encoded_frame, _ = self.marker_detector.detect_markers(encoded_frame, camera_id)
+                    
+                    # Send via callback
                     await self.callbacks[camera_id](encoded_frame)
             
             # Calculate time to maintain frame rate

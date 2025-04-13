@@ -1,5 +1,5 @@
 # app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
@@ -10,7 +10,8 @@ logging.basicConfig(
 )
 
 # Import routers
-from app.routers import camera
+from app.routers import camera, marker_detection
+from app.routers.camera import websocket_endpoint
 
 app = FastAPI(title="MoCap4All API")
 
@@ -18,6 +19,7 @@ app = FastAPI(title="MoCap4All API")
 origins = [
     "http://localhost:5173",  # React Vite default port
     "http://localhost:3000",
+    "*",  # Allow all origins for development - restrict in production
 ]
 
 app.add_middleware(
@@ -28,8 +30,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(camera.router, tags=["Camera"])
+# WebSocket routes
+@app.websocket("/ws/camera/{camera_id}")
+async def camera_websocket(websocket: WebSocket, camera_id: str):
+    await websocket_endpoint(websocket, camera_id)
+
+# HTTP API routes
+app.include_router(camera.router, prefix="/api", tags=["Camera"])
+app.include_router(marker_detection.router, prefix="/api", tags=["Marker Detection"])
 
 @app.get("/")
 async def root():

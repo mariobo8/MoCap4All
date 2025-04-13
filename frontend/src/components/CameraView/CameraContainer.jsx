@@ -1,9 +1,11 @@
 // src/components/CameraView/CameraContainer.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import CameraView from './CameraView';
 import './CameraContainer.css';
 
 const CameraContainer = () => {
+  const [markerDetectionEnabled, setMarkerDetectionEnabled] = useState(false);
+
   // Function to send pattern movement commands via API
   const movePattern = (direction) => {
     fetch(`http://localhost:8000/api/camera/pattern/move?direction=${direction}&amount=10`, {
@@ -14,16 +16,38 @@ const CameraContainer = () => {
       .catch(err => console.error('Error sending pattern move command:', err));
   };
 
+  // Function to toggle marker detection
+  const toggleMarkerDetection = () => {
+    const newState = !markerDetectionEnabled;
+    fetch(`http://localhost:8000/api/marker-detection/toggle?enable=${newState}`, {
+      method: 'POST'
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Marker detection toggled:', data);
+        setMarkerDetectionEnabled(data.enabled);
+      })
+      .catch(err => console.error('Error toggling marker detection:', err));
+  };
+
   return (
     <div className="camera-container">
       <h2 className="camera-container-title">Motion Capture Camera Feeds</h2>
       
       <div className="camera-grid">
         <div className="camera-grid-item">
-          <CameraView cameraId="1" title="Camera 1 - Front View" />
+          <CameraView 
+            cameraId="1" 
+            title="Camera 1 - Front View" 
+            markerDetectionEnabled={markerDetectionEnabled}
+          />
         </div>
         <div className="camera-grid-item">
-          <CameraView cameraId="2" title="Camera 2 - Side View" />
+          <CameraView 
+            cameraId="2" 
+            title="Camera 2 - Side View"
+            markerDetectionEnabled={markerDetectionEnabled}
+          />
         </div>
       </div>
       
@@ -57,6 +81,15 @@ const CameraContainer = () => {
             </button>
           </div>
         </div>
+      </div>
+      
+      <div className="marker-detection-controls">
+        <button 
+          className={`action-button ${markerDetectionEnabled ? 'active' : ''}`} 
+          onClick={toggleMarkerDetection}
+        >
+          {markerDetectionEnabled ? 'Disable Marker Detection' : 'Enable Marker Detection'}
+        </button>
       </div>
     </div>
   );

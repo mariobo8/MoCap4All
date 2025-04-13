@@ -1,8 +1,9 @@
 # app/routers/camera.py
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Depends
 import json
 import asyncio
 import logging
+from typing import Optional
 from app.services.mock_camera import get_mock_camera_service
 
 router = APIRouter()
@@ -67,9 +68,10 @@ class ConnectionManager:
             for ws in disconnected_websockets:
                 self.disconnect(ws, camera_id)
 
+# Create a singleton instance of ConnectionManager
 manager = ConnectionManager()
 
-@router.websocket("/ws/camera/{camera_id}")
+# This is the route that will be registered in main.py
 async def websocket_endpoint(websocket: WebSocket, camera_id: str):
     """WebSocket endpoint for camera streams."""
     await manager.connect(websocket, camera_id)
@@ -84,6 +86,14 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: str):
                     direction = command.get("direction")
                     amount = command.get("amount", 10)
                     manager.mock_camera.move_pattern(direction, amount)
+                elif command.get("type") == "toggle_marker_detection":
+                    enable = command.get("enable", False)
+                    is_enabled = manager.mock_camera.toggle_marker_detection(enable)
+                    # Send confirmation back to the client
+                    await websocket.send_text(json.dumps({
+                        "type": "marker_detection_status",
+                        "enabled": is_enabled
+                    }))
             except json.JSONDecodeError:
                 pass
     except WebSocketDisconnect:
@@ -92,7 +102,7 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: str):
         logging.error(f"WebSocket error: {e}")
         manager.disconnect(websocket, camera_id)
 
-@router.post("/api/camera/pattern/move")
+@router.post("/camera/pattern/move")
 async def move_pattern(direction: str, amount: int = 10):
     """API endpoint to move the pattern."""
     valid_directions = ["left", "right", "up", "down", "forward", "backward"]
