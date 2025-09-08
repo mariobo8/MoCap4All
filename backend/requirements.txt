@@ -1,0 +1,12 @@
+# Core web server and real-time communication
+Flask
+Flask-SocketIO
+
+# Computer vision and numerical processing
+opencv-python
+numpy
+scipy
+
+# Testing framework
+pytest
+pytest-mock
