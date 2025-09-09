@@ -1,16 +1,13 @@
 import React, { useEffect } from 'react';
 import './App.css';
-import socket from './socket'; // Import the centralized socket
+import socket from './socket';
 import VideoStream from './components/VideoStream';
 import ControlPanel from './components/ControlPanel';
+import ThreeScene from './components/ThreeScene'; // Keep the import here
 
 function App() {
-  // Use a useEffect hook to manage the socket connection
   useEffect(() => {
-    // Manually connect when the app component mounts
     socket.connect();
-    
-    // Disconnect when the app component unmounts
     return () => {
       socket.disconnect();
     };
@@ -22,7 +19,12 @@ function App() {
         <h1>MoCap For Robotics Dashboard</h1>
       </header>
       <main>
-        <VideoStream />
+        {/* --- NEW: A dedicated column for visual components --- */}
+        <div className="main-content-area">
+          <VideoStream />
+          <ThreeScene />
+        </div>
+        {/* The control panel is now a sibling, acting as the right column */}
         <ControlPanel />
       </main>
     </div>

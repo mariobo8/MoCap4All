@@ -53,35 +53,29 @@ def handle_initialize_cameras():
                     'success': True, 
                     'message': f'Successfully initialized {camera_manager.num_cameras} cameras.'
                 })
+                poses = camera_manager.get_all_camera_poses()
+                socketio.emit('camera_poses_update', {'poses': poses})
             else:
                 socketio.emit('cameras_initialized_status', {
                     'success': False, 
                     'message': 'Failed to initialize cameras. Check connections.'
                 })
 
-# --- NEW: Handler for the "Disconnect Cameras" button ---
 @socketio.on('disconnect_cameras')
 def handle_disconnect_cameras():
     global thread
     with thread_lock:
         if AppSettings.cameras_initialized:
             print("Received request to disconnect cameras...")
-            # This flag will stop the background task's while loop
             AppSettings.cameras_initialized = False
-            # Wait a moment for the background thread to finish its current loop and exit
             socketio.sleep(0.1) 
-            
-            # Stop the camera hardware capture thread
             camera_manager.stop_capture()
-            
-            # Reset the thread variable so it can be restarted later
             thread = None
-            
-            # Send confirmation back to the frontend
             socketio.emit('cameras_initialized_status', {
                 'success': False, 
                 'message': 'Cameras disconnected successfully.'
             })
+            socketio.emit('camera_poses_update', {'poses': []})
 
 def get_status():
     if not AppSettings.cameras_initialized:
@@ -92,7 +86,6 @@ def get_status():
 
 def background_task():
     print("Background processing task started.")
-    # The loop will now automatically exit when cameras_initialized becomes False
     while AppSettings.cameras_initialized:
         frames = camera_manager.get_processed_frames()
         if not frames:
@@ -129,13 +122,16 @@ def background_task():
 @socketio.on('connect')
 def handle_connect():
     print("Client connected")
-    # --- MODIFIED: Emit the current camera status to the new client ---
-    # This ensures the UI is correct if a user refreshes the page.
     socketio.emit('cameras_initialized_status', {'success': AppSettings.cameras_initialized})
+    if AppSettings.cameras_initialized:
+        poses = camera_manager.get_all_camera_poses()
+        socketio.emit('camera_poses_update', {'poses': poses})
 
 if __name__ == '__main__':
     try:
         print("Starting Flask-SocketIO server, waiting for client to initialize cameras...")
+        # --- THIS LINE IS FIXED ---
+        # The typo '0.0.0._0' has been corrected to '0.0.0.0'
         socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
     except KeyboardInterrupt:
         print("Server shutting down...")

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import socket from '../socket';
 import './Controls.css';
+// The ThreeScene import is now removed from this file
 
 const ControlPanel = () => {
   const [status, setStatus] = useState('Connecting...');
@@ -12,16 +13,13 @@ const ControlPanel = () => {
 
   useEffect(() => {
     socket.on('status_update', (data) => setStatus(data.status));
-    
     socket.on('cameras_initialized_status', (data) => {
       console.log(data.message);
       setCamerasInitialized(data.success);
-      // If cameras are disconnected, also reset the detecting state
       if (!data.success) {
         setIsDetecting(false);
       }
     });
-
     return () => {
       socket.off('status_update');
       socket.off('cameras_initialized_status');
@@ -30,26 +28,21 @@ const ControlPanel = () => {
 
   const handleCameraToggle = () => {
     if (camerasInitialized) {
-      console.log('Sending request to disconnect cameras...');
-      socket.emit('disconnect_cameras');
+        socket.emit('disconnect_cameras');
     } else {
-      console.log('Sending request to initialize cameras...');
-      socket.emit('initialize_cameras');
+        socket.emit('initialize_cameras');
     }
   };
-
   const handleToggleDetection = () => {
     const newIsDetecting = !isDetecting;
     setIsDetecting(newIsDetecting);
     socket.emit('toggle_detection', { value: newIsDetecting });
   };
-
   const handleCameraSettingChange = (newExposure, newGain) => {
     setExposure(newExposure);
     setGain(newGain);
     socket.emit('update_camera_settings', { exposure: newExposure, gain: newGain });
   };
-
   const handleThresholdChange = (event) => {
     const newThreshold = event.target.value;
     setThreshold(newThreshold);
@@ -58,29 +51,26 @@ const ControlPanel = () => {
 
   return (
     <div className="control-panel">
+      {/* The ThreeScene component is no longer here */}
       <div className="status-indicator">
         <h3>STATUS: <span>{status}</span></h3>
       </div>
-
       <div className="panel-section">
         <h4>System</h4>
         <button onClick={handleCameraToggle} className={`control-button ${camerasInitialized ? 'active' : ''}`}>
           {camerasInitialized ? 'Disconnect Cameras' : 'Initialize Cameras'}
         </button>
       </div>
-
       <div className="panel-section">
         <h4>Live Tracking</h4>
         <button onClick={handleToggleDetection} className={`control-button ${isDetecting ? 'active' : ''}`} disabled={!camerasInitialized}>
           {isDetecting ? 'Stop Detection' : 'Start Detection'}
         </button>
       </div>
-      
       <div className="panel-section">
         <h4>Camera Settings</h4>
         <div className="control-item">
           <label htmlFor="exposure">Exposure: {exposure}</label>
-          {/* --- THIS LINE IS FIXED --- */}
           <input id="exposure" type="range" min="0" max="255" value={exposure} onChange={(e) => handleCameraSettingChange(e.target.value, gain)} disabled={!camerasInitialized} />
         </div>
         <div className="control-item">

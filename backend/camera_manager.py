@@ -7,7 +7,6 @@ import os
 import cv2
 import numpy as np
 
-# A flag to attempt importing the pseyepy library.
 try:
     from pseyepy import Camera
     PSEYE_AVAILABLE = True
@@ -18,41 +17,26 @@ except ImportError:
 class CameraManager:
     """
     A thread-safe singleton class to manage PS Eye cameras.
-    It uses a dedicated thread to continuously capture raw frames and provides
-    methods to retrieve processed frames based on the application's state.
     """
-
     def __init__(self):
         if not PSEYE_AVAILABLE:
             self.cameras = None
             print("ERROR: Cannot initialize CameraManager, pseyepy library not available.")
             return
 
-        # --- Camera Hardware and Frame Buffers ---
         self.cameras = None
         self.num_cameras = 0
-        self._latest_raw_frames = {} # Stores raw frames from the capture thread
-        self.camera_params = self._load_camera_params() # Stores calibration data
-
-        # --- Threading Primitives ---
+        self._latest_raw_frames = {}
+        self.camera_params = self._load_camera_params()
         self._frame_lock = threading.Lock()
         self._capture_thread = None
         self._stop_event = threading.Event()
-
-        # --- Application State Flags ---
         self.is_capturing_points = False
 
     def _load_camera_params(self):
-        """
-        Loads intrinsic and extrinsic parameters for each camera from a JSON file.
-        """
         try:
-            # --- THIS IS THE MODIFIED PART ---
             dirname = os.path.dirname(__file__)
-            # Point to the 'config' subfolder to find the parameters file.
             filename = os.path.join(dirname, "config", "camera-params.json")
-            # --- END OF MODIFICATION ---
-            
             with open(filename, 'r') as f:
                 params = json.load(f)
             print("Successfully loaded camera parameters from 'config' folder.")
@@ -65,9 +49,6 @@ class CameraManager:
             return []
 
     def _initialize_cameras(self):
-        """
-        Initializes a connection to all available PS Eye cameras.
-        """
         print("Attempting to initialize PS Eye cameras with auto-detection...")
         try:
             self.cameras = Camera(fps=90, resolution=Camera.RES_SMALL, gain=10, exposure=100)
@@ -88,9 +69,6 @@ class CameraManager:
             return False
 
     def start_capture(self):
-        """
-        Starts the background frame capture thread.
-        """
         if self._initialize_cameras():
             self._stop_event.clear()
             self._capture_thread = threading.Thread(target=self._capture_loop, daemon=True)
@@ -98,9 +76,6 @@ class CameraManager:
             print("Camera capture thread started.")
 
     def stop_capture(self):
-        """
-        Stops the capture thread and releases camera resources.
-        """
         print("Stopping camera capture...")
         self._stop_event.set()
         if self._capture_thread is not None:
@@ -112,10 +87,6 @@ class CameraManager:
         self._capture_thread = None
 
     def _capture_loop(self):
-        """
-        The core loop of the capture thread. Continuously reads raw frames
-        from the cameras and stores them in a thread-safe dictionary.
-        """
         while not self._stop_event.is_set():
             if self.cameras:
                 try:
@@ -126,20 +97,14 @@ class CameraManager:
                 except Exception as e:
                     print(f"ERROR in capture loop: {e}")
                     self._stop_event.set()
-            time.sleep(1 / 200) # Small sleep to yield CPU time
+            time.sleep(1 / 200)
         print("Capture loop stopped.")
 
     def get_latest_raw_frames(self):
-        """
-        Returns a thread-safe copy of the latest raw frames dictionary.
-        """
         with self._frame_lock:
             return self._latest_raw_frames.copy()
 
     def get_processed_frames(self):
-        """
-        Retrieves the latest raw frames and applies the standard pre-processing pipeline.
-        """
         raw_frames_dict = self.get_latest_raw_frames()
         if not raw_frames_dict:
             return None 
@@ -161,8 +126,10 @@ class CameraManager:
 
             params = self.get_camera_params(i)
             
-            if params and params.get("rotation", 0) != 0:
-                frame = np.rot90(frame, k=params["rotation"])
+            # --- THIS IS THE FIX ---
+            # We now use "rotation_frames" (an integer) instead of "rotation" (a list)
+            if params and params.get("rotation_frames", 0) != 0:
+                frame = np.rot90(frame, k=params["rotation_frames"])
 
             if params:
                 frame = cv2.undistort(frame, params["intrinsic_matrix"], params["distortion_coef"])
@@ -176,9 +143,6 @@ class CameraManager:
         return processed_frames
 
     def edit_settings(self, exposure, gain):
-        """
-        Adjusts the exposure and gain for all cameras in real-time.
-        """
         if self.cameras:
             try:
                 self.cameras.exposure = [exposure] * self.num_cameras
@@ -191,17 +155,29 @@ class CameraManager:
         return False
 
     def get_camera_params(self, camera_index):
-        """
-        Safely retrieves the parameter set for a specific camera.
-        """
         if camera_index < len(self.camera_params):
             param_set = self.camera_params[camera_index]
             return {
                 "intrinsic_matrix": np.array(param_set["intrinsic_matrix"]),
                 "distortion_coef": np.array(param_set["distortion_coef"]),
-                "rotation": param_set.get("rotation", 0)
+                # --- THIS IS ALSO FIXED ---
+                # We now correctly distinguish between the 3D rotation and 2D frame rotation
+                "rotation": param_set.get("rotation", [0, 0, 0]),
+                "rotation_frames": param_set.get("rotation_frames", 0)
             }
         return None
+
+    def get_all_camera_poses(self):
+        poses = []
+        for i in range(self.num_cameras):
+            if i < len(self.camera_params):
+                params = self.camera_params[i]
+                if 'position' in params and 'rotation' in params:
+                    poses.append({
+                        'position': params['position'],
+                        'rotation': params['rotation']
+                    })
+        return poses
 
 # --- Singleton Instance ---
 camera_manager = CameraManager()
