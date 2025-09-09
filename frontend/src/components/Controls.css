@@ -1,29 +1,48 @@
-.controls-panel {
-    margin-top: 20px;
-    width: 80%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
+.panel-section {
+    width: 100%;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+    text-align: left;
   }
+  
+  .panel-section h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+  }
+  
+  .status-indicator {
+    background-color: #282c34;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+  }
+  .status-indicator h3 {
+    margin: 0;
+    font-size: 1.1em;
+  }
+  .status-indicator span {
+    font-weight: bold;
+    color: #00d1b2; /* A bright status color */
+  }
+  
   
   .control-item {
     width: 100%;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column; /* Stack label on top of slider */
+    align-items: flex-start;
+    margin-bottom: 15px;
   }
   
   .control-item label {
     font-weight: bold;
     color: #555;
-    white-space: nowrap;
-    margin-right: 15px;
+    margin-bottom: 8px;
   }
-  
-  /* --- NEW: Styling for the main control button --- */
-  .control-item.full-width {
-    justify-content: center;
+  .control-item input[type="range"] {
+    width: 100%;
   }
   
   .control-button {
@@ -32,25 +51,23 @@
     font-size: 1em;
     font-weight: bold;
     color: white;
-    background-color: #28a745; /* Green for "Start" */
+    background-color: #28a745;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.1s ease;
   }
-  
-  .control-button:hover {
-    background-color: #218838;
+  .control-button:hover { background-color: #218838; }
+  .control-button:active { transform: scale(0.98); }
+  .control-button.active { background-color: #dc3545; }
+  .control-button.active:hover { background-color: #c82333; }
+  .control-button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
   }
-  
-  .control-button:active {
-    transform: scale(0.98);
-  }
-  
-  .control-button.active {
-    background-color: #dc3545; /* Red for "Stop" */
-  }
-  
-  .control-button.active:hover {
-    background-color: #c82333;
+  .note {
+    font-size: 0.8em;
+    color: #6c757d;
+    margin-top: 10px;
+    text-align: center;
   }
