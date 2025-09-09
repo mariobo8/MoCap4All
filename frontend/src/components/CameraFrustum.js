@@ -1,39 +1,31 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import * as THREE from 'three';
 
 // Convert degrees to radians for Three.js
 const toRadians = (degrees) => degrees * (Math.PI / 180);
 
 const CameraFrustum = ({ position = [0, 0, 0], rotation = [0, 0, 0] }) => {
-  // Create a group to hold the camera model, so we can easily position/rotate it
-  const eulerRotation = new THREE.Euler(
+  // useMemo is a React hook that prevents re-calculating this on every render
+  const eulerRotation = useMemo(() => new THREE.Euler(
     toRadians(rotation[0]),
     toRadians(rotation[1]),
     toRadians(rotation[2]),
     'YXZ' // A common rotation order for cameras
-  );
+  ), [rotation]);
+
+  // We also memoize the geometry so it's not recreated on every render
+  const pyramidGeometry = useMemo(() => new THREE.ConeGeometry(0.4, 0.8, 4, 1), []);
 
   return (
     <group position={position} rotation={eulerRotation}>
-      {/* Camera Body */}
-      <mesh>
-        <boxGeometry args={[0.1, 0.1, 0.2]} />
-        <meshStandardMaterial color="darkgrey" />
-      </mesh>
-      
-      {/* Lens */}
-      <mesh position={[0, 0, 0.1]}>
-         <cylinderGeometry args={[0.05, 0.05, 0.05, 16]} />
-         <meshStandardMaterial color="black" />
-      </mesh>
-
-      {/* Frustum (the camera's field of view) */}
-      <lineSegments>
-        <edgesGeometry>
-            {/* A pyramid shape */}
-            <coneGeometry args={[0.4, 0.8, 4, 1]} />
-        </edgesGeometry>
-        <lineBasicMaterial color="white" />
+      {/*
+        THIS IS THE CORRECTED PART:
+        The <coneGeometry> is now passed as an argument ('args') to <edgesGeometry>.
+        This is the correct way to create a wireframe from a shape.
+      */}
+      <lineSegments rotation={[-Math.PI / 2, 0, 0]}>
+        <edgesGeometry attach="geometry" args={[pyramidGeometry]} />
+        <lineBasicMaterial color="white" attach="material" />
       </lineSegments>
     </group>
   );
