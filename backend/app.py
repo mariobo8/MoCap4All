@@ -19,11 +19,10 @@ thread = None
 thread_lock = Lock()
 
 class AppSettings:
-    detection_threshold = 200
-    # --- NEW: Add state for detection toggle and camera settings ---
     is_detecting = False
     exposure = 100
     gain = 10
+    detection_threshold = 200
 
 @socketio.on('update_threshold')
 def handle_threshold_update(data):
@@ -31,7 +30,6 @@ def handle_threshold_update(data):
     if new_value is not None:
         AppSettings.detection_threshold = int(new_value)
 
-# --- NEW: Handler for the Start/Stop Detection button ---
 @socketio.on('toggle_detection')
 def handle_detection_toggle(data):
     is_on = data.get('value')
@@ -39,7 +37,6 @@ def handle_detection_toggle(data):
         AppSettings.is_detecting = bool(is_on)
         print(f"Marker detection toggled: {'ON' if AppSettings.is_detecting else 'OFF'}")
 
-# --- NEW: Handler for the Exposure and Gain sliders ---
 @socketio.on('update_camera_settings')
 def handle_camera_settings(data):
     exposure = data.get('exposure')
@@ -47,7 +44,6 @@ def handle_camera_settings(data):
     if exposure is not None and gain is not None:
         AppSettings.exposure = int(exposure)
         AppSettings.gain = int(gain)
-        # Pass the new settings to the camera manager to apply them to the hardware
         camera_manager.edit_settings(AppSettings.exposure, AppSettings.gain)
 
 def background_task():
@@ -61,21 +57,29 @@ def background_task():
         all_cameras_marker_data = []
         display_frames = []
 
+        # --- MODIFIED SECTION START ---
         for i, frame in enumerate(frames):
             display_frame = frame.copy()
             
-            # --- MODIFIED: Wrap detection logic in an 'if' statement ---
             if AppSettings.is_detecting:
                 marker_coords, _ = detect_markers(frame, threshold_value=AppSettings.detection_threshold)
                 all_cameras_marker_data.append(marker_coords)
-                # Draw markers only if detection is on
                 for (x, y) in marker_coords:
                     cv2.circle(display_frame, (x, y), 5, (0, 255, 0), 2)
             else:
-                # If detection is off, just append an empty list for this camera's data
                 all_cameras_marker_data.append([])
 
-            display_frames.append(display_frame)
+            # --- NEW: Add border and text labels ---
+            # Add a 5-pixel gray border around the frame.
+            border_color = (100, 100, 100)
+            display_frame_with_border = cv2.copyMakeBorder(display_frame, 5, 5, 5, 5, cv2.BORDER_CONSTANT, value=border_color)
+            
+            # Add the "Camera X" label to the top-left corner.
+            label = f"Camera {i + 1}"
+            cv2.putText(display_frame_with_border, label, (15, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+            display_frames.append(display_frame_with_border)
+        # --- MODIFIED SECTION END ---
 
         combined_frame = np.hstack(display_frames)
         _, buffer = cv2.imencode('.jpg', combined_frame)
@@ -100,7 +104,6 @@ if __name__ == '__main__':
     try:
         camera_manager.start_capture()
         if camera_manager.num_cameras > 0:
-            # --- NEW: Apply default settings on startup ---
             camera_manager.edit_settings(AppSettings.exposure, AppSettings.gain)
         else:
             print("No cameras detected.")
