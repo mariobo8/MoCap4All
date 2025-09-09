@@ -8,95 +8,108 @@ from threading import Lock
 from flask import Flask
 from flask_socketio import SocketIO
 
-# Import our custom modules
 from camera_manager import camera_manager
 from processing import detect_markers
 
-# --- Flask & SocketIO App Initialization ---
 app = Flask(__name__)
-# The secret key is used for session management, though we don't use sessions here.
-app.config['SECRET_KEY'] = 'secret!' 
-# Initialize SocketIO, allowing all origins for easy development
+app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# --- Background Thread for Real-time Processing ---
-# A lock to ensure that the background thread is started only once.
 thread = None
 thread_lock = Lock()
 
+class AppSettings:
+    detection_threshold = 200
+    # --- NEW: Add state for detection toggle and camera settings ---
+    is_detecting = False
+    exposure = 100
+    gain = 10
+
+@socketio.on('update_threshold')
+def handle_threshold_update(data):
+    new_value = data.get('value')
+    if new_value is not None:
+        AppSettings.detection_threshold = int(new_value)
+
+# --- NEW: Handler for the Start/Stop Detection button ---
+@socketio.on('toggle_detection')
+def handle_detection_toggle(data):
+    is_on = data.get('value')
+    if is_on is not None:
+        AppSettings.is_detecting = bool(is_on)
+        print(f"Marker detection toggled: {'ON' if AppSettings.is_detecting else 'OFF'}")
+
+# --- NEW: Handler for the Exposure and Gain sliders ---
+@socketio.on('update_camera_settings')
+def handle_camera_settings(data):
+    exposure = data.get('exposure')
+    gain = data.get('gain')
+    if exposure is not None and gain is not None:
+        AppSettings.exposure = int(exposure)
+        AppSettings.gain = int(gain)
+        # Pass the new settings to the camera manager to apply them to the hardware
+        camera_manager.edit_settings(AppSettings.exposure, AppSettings.gain)
+
 def background_task():
-    """
-    The main background task that continuously processes camera frames and emits data.
-    """
     print("Background task started.")
     while True:
-        # Get the latest processed frames from all cameras.
         frames = camera_manager.get_processed_frames()
         if not frames:
-            socketio.sleep(0.1) # Wait a bit if no frames are available
+            socketio.sleep(0.1)
             continue
 
         all_cameras_marker_data = []
         display_frames = []
 
-        # Process each camera frame individually
         for i, frame in enumerate(frames):
-            # Run marker detection
-            marker_coords = detect_markers(frame, threshold_value=200) # Using a fixed threshold for now
-            all_cameras_marker_data.append(marker_coords)
-            
-            # Draw detected markers on a copy of the frame for the video feed
             display_frame = frame.copy()
-            for (x, y) in marker_coords:
-                cv2.circle(display_frame, (x, y), 5, (0, 255, 0), 2)
+            
+            # --- MODIFIED: Wrap detection logic in an 'if' statement ---
+            if AppSettings.is_detecting:
+                marker_coords, _ = detect_markers(frame, threshold_value=AppSettings.detection_threshold)
+                all_cameras_marker_data.append(marker_coords)
+                # Draw markers only if detection is on
+                for (x, y) in marker_coords:
+                    cv2.circle(display_frame, (x, y), 5, (0, 255, 0), 2)
+            else:
+                # If detection is off, just append an empty list for this camera's data
+                all_cameras_marker_data.append([])
+
             display_frames.append(display_frame)
 
-        # --- Prepare Data for Emission ---
-        # 1. Video Feed: Stitch frames together and encode as JPEG
         combined_frame = np.hstack(display_frames)
         _, buffer = cv2.imencode('.jpg', combined_frame)
-        # Encode the JPEG image to a Base64 string for easy transport over WebSocket
         image_str = base64.b64encode(buffer).decode('utf-8')
 
-        # 2. Marker Data: The raw coordinates
-        # We can enhance this later to be a more structured dictionary
         marker_data = {'markers': all_cameras_marker_data}
         
-        # --- Emit Data to Clients ---
         socketio.emit('video_feed', {'image': image_str})
         socketio.emit('marker_data', marker_data)
         
-        # Control the update rate (e.g., 20 FPS)
         socketio.sleep(1 / 20)
 
 @socketio.on('connect')
 def handle_connect():
-    """
-    This function is called when a new client connects to the SocketIO server.
-    It starts the background task if it's not already running.
-    """
     global thread
     print("Client connected")
     with thread_lock:
         if thread is None:
-            # Start the background task in a separate thread managed by SocketIO
             thread = socketio.start_background_task(target=background_task)
 
-# --- Main Execution Block ---
 if __name__ == '__main__':
     try:
-        # First, start the camera capture thread. This is crucial.
         camera_manager.start_capture()
-        if camera_manager.num_cameras == 0:
-            print("No cameras detected. The server will run, but no feed will be available.")
+        if camera_manager.num_cameras > 0:
+            # --- NEW: Apply default settings on startup ---
+            camera_manager.edit_settings(AppSettings.exposure, AppSettings.gain)
+        else:
+            print("No cameras detected.")
         
-        # Then, run the Flask-SocketIO server.
         print("Starting Flask-SocketIO server...")
         socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
 
     except KeyboardInterrupt:
         print("Server shutting down...")
     finally:
-        # Ensure camera resources are always released on exit.
         print("Releasing camera resources.")
         camera_manager.stop_capture()

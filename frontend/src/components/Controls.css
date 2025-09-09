@@ -1,0 +1,56 @@
+.controls-panel {
+    margin-top: 20px;
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .control-item {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .control-item label {
+    font-weight: bold;
+    color: #555;
+    white-space: nowrap;
+    margin-right: 15px;
+  }
+  
+  /* --- NEW: Styling for the main control button --- */
+  .control-item.full-width {
+    justify-content: center;
+  }
+  
+  .control-button {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 1em;
+    font-weight: bold;
+    color: white;
+    background-color: #28a745; /* Green for "Start" */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+  }
+  
+  .control-button:hover {
+    background-color: #218838;
+  }
+  
+  .control-button:active {
+    transform: scale(0.98);
+  }
+  
+  .control-button.active {
+    background-color: #dc3545; /* Red for "Stop" */
+  }
+  
+  .control-button.active:hover {
+    background-color: #c82333;
+  }
