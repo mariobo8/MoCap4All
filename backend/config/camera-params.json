@@ -1,0 +1,17 @@
+[
+    {
+      "intrinsic_matrix": [[320, 0, 160], [0, 320, 120], [0, 0, 1]],
+      "distortion_coef": [0, 0, 0, 0, 0],
+      "rotation": 0
+    },
+    {
+      "intrinsic_matrix": [[320, 0, 160], [0, 320, 120], [0, 0, 1]],
+      "distortion_coef": [0, 0, 0, 0, 0],
+      "rotation": 0
+    },
+    {
+      "intrinsic_matrix": [[320, 0, 160], [0, 320, 120], [0, 0, 1]],
+      "distortion_coef": [0, 0, 0, 0, 0],
+      "rotation": 0
+    }
+  ]
