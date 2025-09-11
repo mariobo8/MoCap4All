@@ -32,8 +32,8 @@ const ThreeScene = () => {
   }, []);
 
   // --- NEW: Define constants for our custom axes ---
-  const AXIS_LENGTH = 2;
-  const AXIS_THICKNESS = 0.025;
+  const AXIS_LENGTH = 1;
+  const AXIS_THICKNESS = 0.035;
 
   return (
     <div className="scene-container">
@@ -49,7 +49,7 @@ const ThreeScene = () => {
         <directionalLight position={[10, 10, 5]} intensity={1} />
         
         <gridHelper 
-          args={[50, 50]} 
+          args={[30, 30]} 
           rotation={[-Math.PI / 2, 0, 0]} 
         />
 
