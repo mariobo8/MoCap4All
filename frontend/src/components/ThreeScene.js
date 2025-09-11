@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import socket from '../socket';
 import CameraFrustum from './CameraFrustum';
 
@@ -16,8 +16,7 @@ const ThreeScene = () => {
     
     socket.on('camera_poses_update', handlePoseUpdate);
 
-    // --- NEW: Also listen to the main camera status event ---
-    // If the success flag is false, it means cameras were disconnected, so we clear the poses.
+    // If cameras are disconnected, clear the poses from the scene
     const handleCameraStatus = (data) => {
         if (!data.success) {
             setPoses([]);
@@ -28,17 +27,48 @@ const ThreeScene = () => {
 
     return () => {
       socket.off('camera_poses_update', handlePoseUpdate);
-      socket.off('cameras_initialized_status', handleCameraStatus); // Clean up the new listener
+      socket.off('cameras_initialized_status', handleCameraStatus);
     };
   }, []);
+
+  // --- NEW: Define constants for our custom axes ---
+  const AXIS_LENGTH = 2;
+  const AXIS_THICKNESS = 0.025;
 
   return (
     <div className="scene-container">
       <h4>3D Scene View</h4>
-      <Canvas camera={{ position: [0, 3, 8], fov: 50 }}>
+      <Canvas 
+        camera={{ 
+          position: [10, -10, 8], 
+          fov: 50,
+          up: [0, 0, 1] 
+        }}
+      >
         <ambientLight intensity={0.6} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
-        <Grid infiniteGrid={true} cellSize={1} sectionSize={5} />
+        
+        <gridHelper 
+          args={[50, 50]} 
+          rotation={[-Math.PI / 2, 0, 0]} 
+        />
+
+        {/* --- REPLACED axesHelper WITH THICKER MESHES --- */}
+        {/* X-axis (Red) */}
+        <mesh position={[AXIS_LENGTH / 2, 0, 0]}>
+          <boxGeometry args={[AXIS_LENGTH, AXIS_THICKNESS, AXIS_THICKNESS]} />
+          <meshStandardMaterial color="red" />
+        </mesh>
+        {/* Y-axis (Green) */}
+        <mesh position={[0, AXIS_LENGTH / 2, 0]}>
+          <boxGeometry args={[AXIS_THICKNESS, AXIS_LENGTH, AXIS_THICKNESS]} />
+          <meshStandardMaterial color="green" />
+        </mesh>
+        {/* Z-axis (Blue) */}
+        <mesh position={[0, 0, AXIS_LENGTH / 2]}>
+          <boxGeometry args={[AXIS_THICKNESS, AXIS_THICKNESS, AXIS_LENGTH]} />
+          <meshStandardMaterial color="blue" />
+        </mesh>
         
         {poses.map((pose, index) => (
           <CameraFrustum key={index} position={pose.position} rotation={pose.rotation} />
