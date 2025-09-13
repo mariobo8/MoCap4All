@@ -3,7 +3,7 @@
 import cv2
 import numpy as np
 
-def detect_markers(frame, threshold_value=200):
+def detect_markers(frame, threshold_value=173):
     """
     Detects bright, circular markers in a single video frame using advanced filtering.
 

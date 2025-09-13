@@ -51,7 +51,7 @@ class CameraManager:
     def _initialize_cameras(self):
         print("Attempting to initialize PS Eye cameras with auto-detection...")
         try:
-            self.cameras = Camera(fps=90, resolution=Camera.RES_SMALL, gain=10, exposure=100)
+            self.cameras = Camera(fps=90, resolution=Camera.RES_SMALL, gain=30, exposure=219)
             self.num_cameras = len(self.cameras.exposure)
 
             if self.num_cameras > 0:
